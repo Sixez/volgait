@@ -60,9 +60,9 @@ public class RentController extends ApiController {
     })
     @GetMapping(TRANSPORT)
     public ResponseEntity<?> searchTransport(
-            @Parameter(description = "latitude") @RequestParam("lat") @Min(0) double latitude,
-            @Parameter(description = "longitude") @RequestParam("long") @Min(0) double longitude,
-            @Parameter(description = "search radius in km") @RequestParam("radius") @Min(0) double radius,
+            @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
+            @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude,
+            @Parameter(description = "search radius in km") @RequestParam("radius") @Min(0) Double radius,
             @RequestParam("type") TransportTypeEnum type)
     {
         List<Transport> searchResult = transportService.searchInRadius(latitude, longitude, radius, type);
@@ -91,11 +91,11 @@ public class RentController extends ApiController {
             @ApiResponse(responseCode = "404", content = @Content)
     })
     @GetMapping("/{rentId}")
-    public ResponseEntity<?> rentInfo(@PathVariable @Min(0) long rentId) {
+    public ResponseEntity<?> rentInfo(@PathVariable @Min(0) Long rentId) {
         if (!service.rentExists(rentId)) {
             return ResponseEntity.notFound().build();
         }
-        Rent rent = service.getById(rentId);
+        Rent rent = service.getRentById(rentId);
         RentDto rentDto = service.toDto(rent);
 
         long requesterId = accountService.getCurrentAccount().getId();
@@ -151,7 +151,7 @@ public class RentController extends ApiController {
             return ResponseEntity.notFound().build();
         }
 
-        Transport transport = transportService.getById(transportId);
+        Transport transport = transportService.getTransportById(transportId);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long transportOwnerId = transport.getOwner().getId();
@@ -177,7 +177,7 @@ public class RentController extends ApiController {
             security = @SecurityRequirement(name = Swagger2Config.SECURITY_JWT)
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", content = @Content(schema = @Schema(implementation = RentDto.class), mediaType = "application/json")),
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = RentDto.class), mediaType = "application/json")),
             @ApiResponse(responseCode = "400", content = @Content),
             @ApiResponse(responseCode = "403", description = "Token not valid", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content)
@@ -188,11 +188,12 @@ public class RentController extends ApiController {
             return ResponseEntity.notFound().build();
         }
         try {
-            Transport transport = transportService.getById(transportId);
+            Transport transport = transportService.getTransportById(transportId);
             Account user = accountService.getCurrentAccount();
 
-            RentDto rent = service.toDto(service.addRent(rentType, user, transport));
-            return new ResponseEntity<>(rent, HttpStatus.CREATED);
+            Rent rent = service.addRent(rentType, user, transport);
+            RentDto data = service.toDto(rent);
+            return new ResponseEntity<>(data, HttpStatus.CREATED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -204,7 +205,7 @@ public class RentController extends ApiController {
             security = @SecurityRequirement(name = Swagger2Config.SECURITY_JWT)
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = RentDto.class), mediaType = "application/json")),
+            @ApiResponse(responseCode = "202", content = @Content(schema = @Schema(implementation = RentDto.class), mediaType = "application/json")),
             @ApiResponse(responseCode = "400", content = @Content),
             @ApiResponse(responseCode = "403", description = "Token not valid or this rent not belongs to user", content = @Content),
             @ApiResponse(responseCode = "404", content = @Content)
@@ -212,14 +213,14 @@ public class RentController extends ApiController {
     @PostMapping(END_RENT + "/{rentId}")
     public ResponseEntity<?> endRent(
             @PathVariable @Min(0) Long rentId,
-            @Parameter(description = "latitude") @RequestParam("lat") @Min(0) double latitude,
-            @Parameter(description = "longitude") @RequestParam("long") @Min(0) double longitude)
+            @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
+            @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude)
     {
         if (!service.rentExists(rentId)) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getById(rentId);
+        Rent rent = service.getRentById(rentId);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long userId = rent.getUser().getId();
@@ -235,7 +236,7 @@ public class RentController extends ApiController {
             accountService.withdraw(rent.getUser().getId(), rent.getFinalPrice());
             RentDto data = service.toDto(rent);
 
-            return ResponseEntity.ok(data);
+            return new ResponseEntity<>(data, HttpStatus.ACCEPTED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

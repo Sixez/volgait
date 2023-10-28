@@ -14,9 +14,12 @@ public interface RentService {
     boolean rentExists(long id);
     Rent addRent(RentTypeEnum type, Account user, Transport transport);
     Rent endRent(Rent rent, double latitude, double longitude);
-    Rent getById(long id);
+    Rent getRentById(long id);
     List<Rent> getRentsListByUserId(long userId);
     List<Rent> getRentsListByTransportId(long transportId);
+    Rent updateRent(Rent rent);
+    Rent updateRent(long id, RentDto newData);
+    void deleteRent(long id);
 
     Rent fromDto(RentDto dto);
     RentDto toDto(Rent rent);

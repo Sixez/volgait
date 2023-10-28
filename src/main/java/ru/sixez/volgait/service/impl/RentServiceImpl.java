@@ -90,7 +90,7 @@ public class RentServiceImpl implements RentService {
     }
 
     @Override
-    public Rent getById(long id) {
+    public Rent getRentById(long id) {
         return repo.findById(id)
             .orElseThrow(() -> new RentException("Rent with id %d doesn't exist!".formatted(id)));
 
@@ -104,6 +104,28 @@ public class RentServiceImpl implements RentService {
     @Override
     public List<Rent> getRentsListByTransportId(long transportId) {
         return repo.findAllByTransportId(transportId);
+    }
+
+    @Override
+    public Rent updateRent(Rent rent) {
+        return repo.saveAndFlush(rent);
+    }
+
+    @Override
+    public Rent updateRent(long id, RentDto newData) {
+        Rent rent = getRentById(id);
+        Rent newRent = fromDto(newData);
+
+        newRent.setId(id);
+        newRent.setUser(rent.getUser());
+        newRent.setTransport(rent.getTransport());
+
+        return repo.saveAndFlush(newRent);
+    }
+
+    @Override
+    public void deleteRent(long id) {
+        repo.deleteById(id);
     }
 
     @Override
