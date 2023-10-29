@@ -5,5 +5,6 @@
 
 ## Требования:  
 - java 19
+- Postgres 15
 
 ## URL: http://localhost:8081/swagger-ui/index.html
