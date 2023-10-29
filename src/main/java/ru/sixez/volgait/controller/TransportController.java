@@ -22,8 +22,6 @@ import ru.sixez.volgait.exception.TransportException;
 import ru.sixez.volgait.service.AccountService;
 import ru.sixez.volgait.service.TransportService;
 
-import java.util.Objects;
-
 @Tag(name = "Transport", description = "Transport manipulation")
 @RestController
 @RequestMapping(TransportController.ROUTE)
@@ -42,7 +40,7 @@ public class TransportController extends ApiController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> transportInfo(@PathVariable @Min(0) Long id) {
-        if (!service.transportExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
@@ -86,18 +84,18 @@ public class TransportController extends ApiController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTransport(@PathVariable @Min(0) Long id, @RequestBody @Valid TransportDto transportDto) {
+        if (!service.exists(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        long requesterId = accountService.getCurrentAccount().getId();
+        long ownerId = service.getById(id).getOwner().getId();
+        if (requesterId != ownerId) {
+            return new ResponseEntity<>("Only transport owner can modify it!", HttpStatus.FORBIDDEN);
+        }
+
         try {
-            if (!service.transportExists(id)) {
-                return ResponseEntity.notFound().build();
-            }
-
-            long callerId = accountService.getCurrentAccount().getId();
-            long ownerId = service.getById(id).getOwner().getId();
-            if (callerId != ownerId) {
-                return new ResponseEntity<>("Only transport owner can modify it!", HttpStatus.FORBIDDEN);
-            }
-
-            Transport transport = service.updateTransport(id, transportDto);
+            Transport transport = service.update(id, transportDto);
             TransportDto newData = service.toDto(transport);
             return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
         } catch (TransportException e) {
@@ -116,18 +114,18 @@ public class TransportController extends ApiController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTransport(@PathVariable @Min(0) Long id) {
-        if (!service.transportExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
-        long callerId = accountService.getCurrentAccount().getId();
+        long requesterId = accountService.getCurrentAccount().getId();
         long ownerId = service.getById(id).getOwner().getId();
-        if (callerId != ownerId) {
+        if (requesterId != ownerId) {
             return new ResponseEntity<>("Only transport owner can delete it!", HttpStatus.FORBIDDEN);
         }
 
         try {
-            service.deleteTransport(id);
+            service.delete(id);
             return ResponseEntity.noContent().build();
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

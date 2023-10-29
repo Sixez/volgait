@@ -8,19 +8,11 @@ import ru.sixez.volgait.entity.Transport;
 
 import java.util.List;
 
-public interface RentService {
+public interface RentService extends IService<Rent, RentDto> {
     boolean isTransportRented(Transport transport);
     boolean isTransportRented(long transportId);
-    boolean rentExists(long id);
-    Rent addRent(RentTypeEnum type, Account user, Transport transport);
+    Rent rent(RentTypeEnum type, Account user, Transport transport);
     Rent endRent(Rent rent, double latitude, double longitude);
-    Rent getRentById(long id);
-    List<Rent> getRentsListByUserId(long userId);
-    List<Rent> getRentsListByTransportId(long transportId);
-    Rent updateRent(Rent rent);
-    Rent updateRent(long id, RentDto newData);
-    void deleteRent(long id);
-
-    Rent fromDto(RentDto dto);
-    RentDto toDto(Rent rent);
+    List<Rent> getListByUserId(long userId);
+    List<Rent> getListByTransportId(long transportId);
 }

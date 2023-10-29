@@ -2,7 +2,6 @@ package ru.sixez.volgait.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -51,9 +50,6 @@ public class RentController extends ApiController {
     private RentService service;
 
     @Operation(summary = "Search rentable transport", description = "Search transport available for rent based on geo position and search radius")
-    @Parameters({
-            @Parameter(name = "radius", description = "search radius in kilometers")
-    })
     @ApiResponses({
             @ApiResponse(responseCode = "200", content = @Content(array = @ArraySchema(schema = @Schema(implementation = TransportDto.class)), mediaType = "application/json")),
             @ApiResponse(responseCode = "204", content = @Content)
@@ -68,9 +64,9 @@ public class RentController extends ApiController {
         List<Transport> searchResult = transportService.searchInRadius(latitude, longitude, radius, type);
 
         List<TransportDto> responseList = searchResult.stream()
+                .filter(Transport::isCanBeRented)
+                .filter(transport -> !service.isTransportRented(transport.getId()))
                 .map(transportService::toDto)
-                .filter(TransportDto::canBeRented)
-                .filter(transport -> service.isTransportRented(transport.id()))
                 .toList();
 
         if (responseList.isEmpty()) {
@@ -92,17 +88,17 @@ public class RentController extends ApiController {
     })
     @GetMapping("/{rentId}")
     public ResponseEntity<?> rentInfo(@PathVariable @Min(0) Long rentId) {
-        if (!service.rentExists(rentId)) {
+        if (!service.exists(rentId)) {
             return ResponseEntity.notFound().build();
         }
-        Rent rent = service.getRentById(rentId);
+        Rent rent = service.getById(rentId);
         RentDto rentDto = service.toDto(rent);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long userId = rent.getUser().getId();
         long transportOwnerId = rent.getTransport().getOwner().getId();
 
-        if (userId != requesterId && transportOwnerId != requesterId) {
+        if (requesterId != userId && requesterId != transportOwnerId) {
             return new ResponseEntity<>("You have no access to this rent", HttpStatus.FORBIDDEN);
         }
 
@@ -123,7 +119,7 @@ public class RentController extends ApiController {
     public ResponseEntity<?> myHistory() {
         Account user = accountService.getCurrentAccount();
 
-        List<RentDto> rents = service.getRentsListByUserId(user.getId()).stream()
+        List<RentDto> rents = service.getListByUserId(user.getId()).stream()
                 .map(service::toDto)
                 .toList();
 
@@ -147,11 +143,11 @@ public class RentController extends ApiController {
     })
     @GetMapping(TRANSPORT_HISTORY + "/{transportId}")
     public ResponseEntity<?> transportHistory(@PathVariable @Min(0) Long transportId) {
-        if (!transportService.transportExists(transportId)) {
+        if (!transportService.exists(transportId)) {
             return ResponseEntity.notFound().build();
         }
 
-        Transport transport = transportService.getTransportById(transportId);
+        Transport transport = transportService.getById(transportId);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long transportOwnerId = transport.getOwner().getId();
@@ -160,7 +156,7 @@ public class RentController extends ApiController {
             return new ResponseEntity<>("You can not get rents of foreign transport", HttpStatus.FORBIDDEN);
         }
 
-        List<RentDto> rents = service.getRentsListByTransportId(transportId).stream()
+        List<RentDto> rents = service.getListByTransportId(transportId).stream()
                 .map(service::toDto)
                 .toList();
 
@@ -184,14 +180,15 @@ public class RentController extends ApiController {
     })
     @PostMapping(NEW_RENT + "/{transportId}")
     public ResponseEntity<?> newRent(@PathVariable @Min(0) Long transportId, @RequestParam RentTypeEnum rentType) {
-        if (!transportService.transportExists(transportId)) {
+        if (!transportService.exists(transportId)) {
             return ResponseEntity.notFound().build();
         }
+
         try {
-            Transport transport = transportService.getTransportById(transportId);
+            Transport transport = transportService.getById(transportId);
             Account user = accountService.getCurrentAccount();
 
-            Rent rent = service.addRent(rentType, user, transport);
+            Rent rent = service.rent(rentType, user, transport);
             RentDto data = service.toDto(rent);
             return new ResponseEntity<>(data, HttpStatus.CREATED);
         } catch (RentException e) {
@@ -216,22 +213,21 @@ public class RentController extends ApiController {
             @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
             @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude)
     {
-        if (!service.rentExists(rentId)) {
+        if (!service.exists(rentId)) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getRentById(rentId);
+        Rent rent = service.getById(rentId);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long userId = rent.getUser().getId();
-
         if (requesterId != userId) {
             return new ResponseEntity<>("You have no access to this rent", HttpStatus.FORBIDDEN);
         }
 
         try {
             rent = service.endRent(rent, latitude, longitude);
-            transportService.updateTransport(rent.getTransport());
+            transportService.update(rent.getTransport());
 
             accountService.withdraw(rent.getUser().getId(), rent.getFinalPrice());
             RentDto data = service.toDto(rent);

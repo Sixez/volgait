@@ -53,7 +53,7 @@ public class AdminTransportController extends AdminController {
         if (start == null || start <= 0) start = 0L;
         if (count == null || count <= 0) count = 10;
 
-        List<TransportDto> list = service.getTransportList(start, count, type).stream()
+        List<TransportDto> list = service.getList(start, count, type).stream()
                 .map(service::toDto)
                 .toList();
 
@@ -76,7 +76,7 @@ public class AdminTransportController extends AdminController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> transportInfo(@PathVariable @Min(0) Long id) {
-        if (!service.transportExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
@@ -98,12 +98,12 @@ public class AdminTransportController extends AdminController {
     })
     @PostMapping
     public ResponseEntity<?> createTransport(@RequestBody @Valid TransportDto data) {
-        if (!accountService.accountExists(data.owner_id())) {
+        if (!accountService.exists(data.owner_id())) {
             return ResponseEntity.badRequest().body("Account with id %d doesn't exist".formatted(data.owner_id()));
         }
 
         try {
-            Account owner = accountService.getAccountById(data.owner_id());
+            Account owner = accountService.getById(data.owner_id());
 
             Transport transport = service.createTransport(data, owner);
             TransportDto createdDto = service.toDto(transport);
@@ -126,12 +126,12 @@ public class AdminTransportController extends AdminController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTransport(@PathVariable @Min(0) Long id, @RequestBody @Valid TransportDto transportDto) {
-        try {
-            if (!service.transportExists(id)) {
-                return ResponseEntity.notFound().build();
-            }
+        if (!service.exists(id)) {
+            return ResponseEntity.notFound().build();
+        }
 
-            Transport transport = service.updateTransport(id, transportDto);
+        try {
+            Transport transport = service.update(id, transportDto);
             TransportDto newData = service.toDto(transport);
             return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
         } catch (TransportException e) {
@@ -152,12 +152,12 @@ public class AdminTransportController extends AdminController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTransport(@PathVariable @Min(0) Long id) {
-        if (!service.transportExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            service.deleteTransport(id);
+            service.delete(id);
             return ResponseEntity.noContent().build();
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

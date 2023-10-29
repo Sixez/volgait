@@ -7,18 +7,9 @@ import ru.sixez.volgait.entity.TransportTypeEnum;
 
 import java.util.List;
 
-public interface TransportService {
-    boolean transportExists(long id);
+public interface TransportService extends IService<Transport, TransportDto> {
     Transport createTransport(TransportDto data, Account owner);
-    Transport getById(long id);
-    List<Transport> getTransportList();
-    List<Transport> getTransportList(long start, int count, TransportTypeEnum type);
+    List<Transport> getList(long start, int count, TransportTypeEnum type);
     List<Transport> searchInRadius(double latitude, double longitude, double radius);
     List<Transport> searchInRadius(double latitude, double longitude, double radius, TransportTypeEnum type);
-    Transport updateTransport(Transport transport);
-    Transport updateTransport(long id, TransportDto newData);
-    void deleteTransport(long id);
-
-    Transport fromDto(TransportDto dto);
-    TransportDto toDto(Transport transport);
 }

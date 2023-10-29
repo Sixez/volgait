@@ -45,7 +45,7 @@ public class AccountController extends ApiController {
 
     @Operation(
             summary = "Get currently logged in account info",
-            description = "Retrieve account info regarding to JWT's holder",
+            description = "Retrieve account info regarding to JWT holder",
             security = @SecurityRequirement(name = Swagger2Config.SECURITY_JWT)
     )
     @ApiResponses({
@@ -123,7 +123,7 @@ public class AccountController extends ApiController {
     @PutMapping(UPDATE)
     public ResponseEntity<?> update(@RequestBody @Valid AuthRequest request) {
         try {
-            Account user = service.updateAccountCredentials(service.getCurrentAccount(), request.username(), request.password());
+            Account user = service.updateCredentials(service.getCurrentAccount(), request.username(), request.password());
             AccountDto newData = service.toDto(user);
             return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
         } catch (AccountException e) {

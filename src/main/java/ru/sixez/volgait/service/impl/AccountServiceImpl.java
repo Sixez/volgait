@@ -1,20 +1,15 @@
 package ru.sixez.volgait.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.sixez.volgait.dto.AccountDto;
 import ru.sixez.volgait.entity.Account;
-import ru.sixez.volgait.entity.AccountDetails;
 import ru.sixez.volgait.exception.AccountException;
 import ru.sixez.volgait.repo.AccountRepo;
 import ru.sixez.volgait.service.AccountService;
 
-import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -31,84 +26,81 @@ public class AccountServiceImpl implements AccountService {
     //AccountService impl
     @Override
     public Account getCurrentAccount() {
-        return getAccountByUsername(getCurrentUsername());
+        return getByUsername(getCurrentUsername());
     }
 
     @Override
-    public boolean accountExists(long id) {
+    public boolean exists(long id) {
         return repo.existsById(id);
     }
 
     @Override
-    public boolean accountExists(String username) {
+    public boolean exists(String username) {
         return repo.existsByUsername(username);
     }
 
     @Override
-    public Account getAccountById(long id) {
+    public Account getById(long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new AccountException("Account with id %d not found!".formatted(id)));
     }
 
     @Override
-    public Account getAccountByUsername(String username) {
+    public Account getByUsername(String username) {
         return repo.findByUsername(username)
                 .orElseThrow(() -> new AccountException("Account with username %s not found!".formatted(username)));
     }
 
     @Override
-    public List<Account> getAccountsList() {
+    public List<Account> getList() {
         return repo.findAll();
     }
 
     @Override
-    public List<Account> getAccountsList(long start, int count) {
+    public List<Account> getList(long start, int count) {
         return repo.findByIdGreaterThan(start, count);
     }
 
     @Override
-    public Account updateAccountCredentials(Account account, String newUsername, String newPassword) {
+    public Account updateCredentials(Account account, String newUsername, String newPassword) {
         AccountDto newAcc = new AccountDto(account.getId(), newUsername, newPassword, account.isAdmin(), account.getBalance());
-        return updateAccount(account.getId(), newAcc);
+        return update(account.getId(), newAcc);
     }
 
     @Override
-    public Account updateAccount(long id, AccountDto newData) {
-        if (!repo.existsById(id)) {
+    public Account update(long id, AccountDto newData) {
+        if (!exists(id)) {
             throw new AccountException("Account with id %d doesn't exist!".formatted(id));
         }
 
-        Account account = getAccountById(id);
+        Account account = getById(id);
 
-        if (!account.getUsername().equals(newData.username()) && accountExists(newData.username())) {
+        if (!account.getUsername().equals(newData.username()) && exists(newData.username())) {
             throw new AccountException("Account with username %s already exists!".formatted(newData.username()));
         }
-        account.setUsername(newData.username());
+        Account newAccount = fromDto(newData);
 
         if (newData.password() != null && !newData.password().isEmpty()) {
-            account.setPassword(passwordEncoder.encode(newData.password()));
+            newAccount.setPassword(passwordEncoder.encode(newData.password()));
         }
 
-        account.setAdmin(newData.admin());
-        account.setBalance(newData.balance());
-
-        return repo.saveAndFlush(account);
+        return repo.saveAndFlush(newAccount);
     }
 
     @Override
-    public void withdraw(long id, double amount) {
-        Account account = getAccountById(id);
-        account.setBalance(account.getBalance() - amount);
-        repo.saveAndFlush(account);
+    public void pay(long id, double amount) {
+        Account account = getById(id);
+        account.setBalance(account.getBalance() + amount);
+        update(account);
     }
 
     @Override
-    public void deleteAccount(long id) {
+    public void delete(long id) {
         repo.deleteById(id);
     }
 
     @Override
-    public void deleteAccount(String username) {
+    public void delete(String username) {
         repo.deleteByUsername(username);
     }
 

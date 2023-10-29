@@ -11,7 +11,6 @@ import ru.sixez.volgait.repo.TransportRepo;
 import ru.sixez.volgait.service.TransportService;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class TransportServiceImpl implements TransportService {
@@ -20,7 +19,7 @@ public class TransportServiceImpl implements TransportService {
 
     // TransportService impl
     @Override
-    public boolean transportExists(long id) {
+    public boolean exists(long id) {
         return repo.existsById(id);
     }
 
@@ -47,18 +46,19 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public List<Transport> getTransportList() {
+    public List<Transport> getList() {
         return repo.findAll();
     }
 
-    public List<Transport> getTransportList(long start, int count) {
+
+    public List<Transport> getList(long start, int count) {
         return repo.findByIdGreaterThan(start, count);
     }
 
     @Override
-    public List<Transport> getTransportList(long start, int count, TransportTypeEnum type) {
+    public List<Transport> getList(long start, int count, TransportTypeEnum type) {
         if (type == TransportTypeEnum.All) {
-            return getTransportList(start, count);
+            return getList(start, count);
         }
         return repo.findByIdGreaterThanAndType(start, count, type);
     }
@@ -77,12 +77,7 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public Transport updateTransport(Transport transport) {
-        return repo.saveAndFlush(transport);
-    }
-
-    @Override
-    public Transport updateTransport(long id, TransportDto newData) {
+    public Transport update(long id, TransportDto newData) {
         if (newData.transportType() == TransportTypeEnum.All) {
             throw new TransportException("Transport type cannot be \"All\"!");
         }
@@ -97,7 +92,7 @@ public class TransportServiceImpl implements TransportService {
     }
 
     @Override
-    public void deleteTransport(long id) {
+    public void delete(long id) {
         repo.deleteById(id);
     }
 

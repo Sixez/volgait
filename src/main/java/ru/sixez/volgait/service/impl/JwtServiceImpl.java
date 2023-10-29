@@ -13,13 +13,14 @@ import ru.sixez.volgait.service.JwtService;
 import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @Service
 public class JwtServiceImpl implements JwtService {
+    // Secret key crypto:
+    // V8LPo6XVEkYLRSoQpa/zJML4Zf1PCyRC6Hs6DF4Kkm/ua2NrkLKMK9fAydMKwmzS
     private static final String SECRET_KEY = "566a684d5547383257465a4661316c4d556c4e76555842684c33704b54557730576d597855454e35556b4d3253484d3252455930533274744c3356684d6b35796130784c545573355a6b46355a45314c6432313655773d3d";
-    private static final long LIFETIME = Duration.ofMinutes(15).toMillis();
+    private static final long LIFETIME = Duration.ofMinutes(30).toMillis();
     private static final List<String> BLACKLIST = new ArrayList<>();
 
     private Claims extractAllClaims(String token) {

@@ -4,5 +4,5 @@ public enum TransportTypeEnum {
     Car,
     Bike,
     Scooter,
-    All;
+    All
 }

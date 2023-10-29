@@ -16,12 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
-import ru.sixez.volgait.controller.AccountController;
-import ru.sixez.volgait.controller.AdminController;
-import ru.sixez.volgait.controller.RentController;
-import ru.sixez.volgait.controller.TransportController;
+import ru.sixez.volgait.controller.*;
 import ru.sixez.volgait.service.impl.AccountDetailsService;
 
 import java.util.Arrays;
@@ -62,7 +58,7 @@ public class SecurityConfig{
             // account endpoints open only for authenticated users
             request.requestMatchers(
                     AccountController.ME_ENDPOINT, AccountController.SIGN_OUT_ENDPOINT,
-                    AccountController.UPDATE_ENDPOINT
+                    AccountController.UPDATE_ENDPOINT, PaymentController.HESOYAM_ENDPOINT
             ).hasAuthority("USER");
 
             // transport endpoints open only for authenticated users,
@@ -73,7 +69,7 @@ public class SecurityConfig{
 
             // rent endpoints is
             request.requestMatchers(
-                    RentController.MY_HISTORY_ENDPOINT + "/*", RentController.TRANSPORT_HISTORY_ENDPOINT + "/*",
+                    RentController.MY_HISTORY_ENDPOINT, RentController.TRANSPORT_HISTORY_ENDPOINT + "/*",
                     RentController.NEW_RENT_ENDPOINT + "/*", RentController.END_RENT_ENDPOINT + "/*"
             ).hasAuthority("USER");
 

@@ -9,7 +9,6 @@ import ru.sixez.volgait.entity.Transport;
 import ru.sixez.volgait.entity.TransportTypeEnum;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TransportRepo extends JpaRepository<Transport, Long> {

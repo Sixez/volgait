@@ -56,11 +56,11 @@ public class AdminRentController extends AdminController {
     })
     @GetMapping(RENT_MAP + "/{rentId}")
     public ResponseEntity<?> rentInfo(@PathVariable @Min(0) Long rentId) {
-        if (!service.rentExists(rentId)) {
+        if (!service.exists(rentId)) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getRentById(rentId);
+        Rent rent = service.getById(rentId);
         RentDto data = service.toDto(rent);
         return ResponseEntity.ok(data);
     }
@@ -78,12 +78,12 @@ public class AdminRentController extends AdminController {
     })
     @GetMapping(USER_HISTORY + "/{userId}")
     public ResponseEntity<?> userHistory(@PathVariable @Min(0) Long userId) {
-        if (accountService.accountExists(userId)) {
+        if (accountService.exists(userId)) {
             return ResponseEntity.notFound().build();
         }
-        Account user = accountService.getAccountById(userId);
+        Account user = accountService.getById(userId);
 
-        List<RentDto> rents = service.getRentsListByUserId(user.getId()).stream()
+        List<RentDto> rents = service.getListByUserId(user.getId()).stream()
                 .map(service::toDto)
                 .toList();
 
@@ -107,11 +107,11 @@ public class AdminRentController extends AdminController {
     })
     @GetMapping(TRANSPORT_HISTORY + "/{transportId}")
     public ResponseEntity<?> transportHistory(@PathVariable @Min(0) Long transportId) {
-        if (!transportService.transportExists(transportId)) {
+        if (!transportService.exists(transportId)) {
             return ResponseEntity.notFound().build();
         }
 
-        List<RentDto> rents = service.getRentsListByTransportId(transportId).stream()
+        List<RentDto> rents = service.getListByTransportId(transportId).stream()
                 .map(service::toDto)
                 .toList();
 
@@ -134,14 +134,14 @@ public class AdminRentController extends AdminController {
     })
     @PostMapping(RENT_MAP)
     public ResponseEntity<?> createRent(@RequestBody @Valid RentDto data) {
-        if (!transportService.transportExists(data.transportId()) || !accountService.accountExists(data.userId())) {
+        if (!transportService.exists(data.transportId()) || !accountService.exists(data.userId())) {
             return ResponseEntity.badRequest().build();
         }
         try {
-            Transport transport = transportService.getTransportById(data.transportId());
-            Account user = accountService.getAccountById(data.userId());
+            Transport transport = transportService.getById(data.transportId());
+            Account user = accountService.getById(data.userId());
 
-            Rent rent = service.addRent(data.priceType(), user, transport);
+            Rent rent = service.rent(data.priceType(), user, transport);
             RentDto created = service.toDto(rent);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (RentException e) {
@@ -166,15 +166,15 @@ public class AdminRentController extends AdminController {
             @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
             @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude)
     {
-        if (!service.rentExists(rentId)) {
+        if (!service.exists(rentId)) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getRentById(rentId);
+        Rent rent = service.getById(rentId);
 
         try {
             rent = service.endRent(rent, latitude, longitude);
-            transportService.updateTransport(rent.getTransport());
+            transportService.update(rent.getTransport());
 
             accountService.withdraw(rent.getUser().getId(), rent.getFinalPrice());
             RentDto data = service.toDto(rent);
@@ -197,12 +197,12 @@ public class AdminRentController extends AdminController {
     })
     @PutMapping(RENT_MAP + "/{id}")
     public ResponseEntity<?> updateRent(@PathVariable @Min(0) Long id, @RequestBody @Valid RentDto data) {
-        if (!service.rentExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            Rent updated = service.updateRent(id, data);
+            Rent updated = service.update(id, data);
             RentDto newData = service.toDto(updated);
             return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
         } catch (RentException e) {
@@ -223,12 +223,12 @@ public class AdminRentController extends AdminController {
     })
     @DeleteMapping(RENT_MAP + "/{rentId}")
     public ResponseEntity<?> deleteRent(@PathVariable @Min(0) Long rentId) {
-        if (!service.rentExists(rentId)) {
+        if (!service.exists(rentId)) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            service.deleteRent(rentId);
+            service.delete(rentId);
             return ResponseEntity.noContent().build();
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

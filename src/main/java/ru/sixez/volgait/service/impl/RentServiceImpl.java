@@ -41,7 +41,7 @@ public class RentServiceImpl implements RentService {
 
     // RentService impl
     @Override
-    public boolean rentExists(long id) {
+    public boolean exists(long id) {
         return repo.existsById(id);
     }
 
@@ -52,12 +52,12 @@ public class RentServiceImpl implements RentService {
 
     @Override
     public boolean isTransportRented(long transportId) {
-        List<Rent> result = repo.findAllByTransportId(transportId);
+        List<Rent> result = getListByTransportId(transportId);
         return !result.isEmpty() && !result.stream().allMatch(Rent::isEnded);
     }
 
     @Override
-    public Rent addRent(RentTypeEnum type, Account user, Transport transport) {
+    public Rent rent(RentTypeEnum type, Account user, Transport transport) {
         if (!transport.isCanBeRented()) {
             throw new RentException("This transport is not rentable");
         }
@@ -90,30 +90,29 @@ public class RentServiceImpl implements RentService {
     }
 
     @Override
-    public Rent getRentById(long id) {
+    public Rent getById(long id) {
         return repo.findById(id)
             .orElseThrow(() -> new RentException("Rent with id %d doesn't exist!".formatted(id)));
-
     }
 
     @Override
-    public List<Rent> getRentsListByUserId(long userId) {
+    public List<Rent> getList() {
+        return repo.findAll();
+    }
+
+    @Override
+    public List<Rent> getListByUserId(long userId) {
         return repo.findAllByUserId(userId);
     }
 
     @Override
-    public List<Rent> getRentsListByTransportId(long transportId) {
+    public List<Rent> getListByTransportId(long transportId) {
         return repo.findAllByTransportId(transportId);
     }
 
     @Override
-    public Rent updateRent(Rent rent) {
-        return repo.saveAndFlush(rent);
-    }
-
-    @Override
-    public Rent updateRent(long id, RentDto newData) {
-        Rent rent = getRentById(id);
+    public Rent update(long id, RentDto newData) {
+        Rent rent = getById(id);
         Rent newRent = fromDto(newData);
 
         newRent.setId(id);
@@ -124,7 +123,7 @@ public class RentServiceImpl implements RentService {
     }
 
     @Override
-    public void deleteRent(long id) {
+    public void delete(long id) {
         repo.deleteById(id);
     }
 

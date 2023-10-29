@@ -49,7 +49,7 @@ public class AdminAccountController extends AdminController {
         if (start == null || start <= 0) start = 0L;
         if (count == null || count <= 0) count = 10;
 
-        List<AccountDto> list = service.getAccountsList(start, count).stream()
+        List<AccountDto> list = service.getList(start, count).stream()
                 .peek(acc -> acc.setPassword("*****"))
                 .map(service::toDto)
                 .toList();
@@ -93,15 +93,14 @@ public class AdminAccountController extends AdminController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> accountData(@PathVariable @Min(0) Long id) {
-        if (id <= 0L) id = 0L;
-        try {
-            Account account = service.getAccountById(id);
-            account.setPassword("*****");
-            AccountDto acc = service.toDto(account);
-            return ResponseEntity.ok(acc);
-        } catch (AccountException e) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
+
+        Account account = service.getById(id);
+        account.setPassword("*****");
+        AccountDto acc = service.toDto(account);
+        return ResponseEntity.ok(acc);
     }
 
     @Operation(
@@ -117,13 +116,13 @@ public class AdminAccountController extends AdminController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAccount(@PathVariable @Min(0) Long id, @RequestBody @Valid AccountDto data) {
-        if (!service.accountExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            service.updateAccount(id, data);
-            AccountDto newData = service.toDto(service.getAccountById(id));
+            Account updated = service.update(id, data);
+            AccountDto newData = service.toDto(updated);
             return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -132,7 +131,7 @@ public class AdminAccountController extends AdminController {
 
     @Operation(
             summary = "Delete account data",
-            description = "Delete account of given id from datasource and all other ddata relative to account, such as transport, rents, etc.",
+            description = "Delete account of given id from datasource and all other data relative to account, such as transport, rents, etc.",
             security = @SecurityRequirement(name = Swagger2Config.SECURITY_JWT)
     )
     @ApiResponses({
@@ -142,12 +141,12 @@ public class AdminAccountController extends AdminController {
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteAccount(@PathVariable @Min(0) Long id) {
-        if (!service.accountExists(id)) {
+        if (!service.exists(id)) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            service.deleteAccount(id);
+            service.delete(id);
             return ResponseEntity.noContent().build();
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
