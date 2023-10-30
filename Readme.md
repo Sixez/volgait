@@ -26,4 +26,4 @@
 - user/user
 - admin/admin
 
-## URL: http://localhost:8081/swagger-ui/index.html
+## [Swagger UI (URL)](http://localhost:8081/swagger-ui/index.html)
