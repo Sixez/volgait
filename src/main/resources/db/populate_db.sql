@@ -10,4 +10,4 @@ VALUES
 (3, 1, 'A classic vehicle', 'Bike', 'Урал', 'Б777ИК 31', 'Серый', true, 50.532920, 36.685458, 2, 700),
 (4, 1, 'Luxurious transport', 'Scooter', 'Apachie Pro', 'О418ВМ 31', 'Черный', true, 50.578352, 36.592063, 15, 5000),
 (5, 2, 'The best transport', 'Scooter', 'Zipper M6', 'В777ВС 31', 'Черный', true, 50.554487, 36.564294, 1, 500),
-(6, 2, 'Opinion leader', 'Bike', 'BMW R 1250 R', 'В591АА 31', 'Черный', true, 50.566378, 36.551949, 3, 1300)
+(6, 2, 'Opinion leader', 'Bike', 'BMW R 1250 R', 'В591АА 31', 'Черный', true, 50.566378, 36.551949, 3, 1300);

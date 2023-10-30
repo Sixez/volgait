@@ -39,7 +39,7 @@ CREATE TABLE vit_rents (
     time_end timestamp,
     price_of_unit double precision NOT NULL,
     price_type varchar(16) NOT NULL,
-    final_price double precision
+    final_price double precision,
 
     CONSTRAINT fk_rents_user FOREIGN KEY(user_id) REFERENCES vit_accounts(id) ON DELETE CASCADE,
     CONSTRAINT fk_rents_transport FOREIGN KEY(transport_id) REFERENCES vit_transport(id) ON DELETE CASCADE,
