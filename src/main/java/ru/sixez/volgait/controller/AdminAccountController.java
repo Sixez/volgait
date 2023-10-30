@@ -51,7 +51,7 @@ public class AdminAccountController extends AdminController {
 
         List<AccountDto> list = service.getList(start, count).stream()
                 .peek(acc -> acc.setPassword("*****"))
-                .map(service::toDto)
+                .map(Account::toDto)
                 .toList();
 
         if (list.isEmpty()) {
@@ -93,14 +93,14 @@ public class AdminAccountController extends AdminController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> accountData(@PathVariable @Min(0) Long id) {
-        if (!service.exists(id)) {
+        Account account = service.getById(id);
+
+        if (account == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Account account = service.getById(id);
         account.setPassword("*****");
-        AccountDto acc = service.toDto(account);
-        return ResponseEntity.ok(acc);
+        return ResponseEntity.ok(account.toDto());
     }
 
     @Operation(
@@ -122,8 +122,7 @@ public class AdminAccountController extends AdminController {
 
         try {
             Account updated = service.update(id, data);
-            AccountDto newData = service.toDto(updated);
-            return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(updated.toDto(), HttpStatus.ACCEPTED);
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

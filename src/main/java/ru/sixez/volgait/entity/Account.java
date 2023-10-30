@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import ru.sixez.volgait.dto.AccountDto;
 
 @Data
 @NoArgsConstructor
@@ -15,8 +16,9 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = Account.TABLE_NAME)
-public class Account extends AbstractEntity {
-    public static final String TABLE_NAME =  AbstractEntity.DB_PREFIX + "accounts";
+public class Account extends AbstractEntity<AccountDto, Account> {
+    public static final String TABLE_NAME =  DB_PREFIX + "accounts";
+
     @Column(nullable = false, unique = true)
     private String username;
 
@@ -27,4 +29,25 @@ public class Account extends AbstractEntity {
 
     @PositiveOrZero
     private double balance;
+
+    @Override
+    public AccountDto toDto() {
+        return new AccountDto(
+                getId(),
+                username,
+                password,
+                admin,
+                balance
+        );
+    }
+
+    @Override
+    public Account fromDto(AccountDto dto) {
+        setId(dto.id());
+        username = dto.username();
+        password = dto.password();
+        admin = dto.admin();
+        balance = dto.balance();
+        return this;
+    }
 }

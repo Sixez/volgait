@@ -1,6 +1,7 @@
 package ru.sixez.volgait.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -56,8 +57,7 @@ public class AccountController extends ApiController {
     public ResponseEntity<?> me() {
         Account user = service.getCurrentAccount();
         user.setPassword("*****");
-        AccountDto userDto = service.toDto(user);
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(user.toDto());
     }
 
     @Operation(summary = "Authentication and retrieval of JWT")
@@ -100,7 +100,7 @@ public class AccountController extends ApiController {
             @ApiResponse(responseCode = "403", description = "Token is not valid", content = @Content)
     })
     @PostMapping(SIGN_OUT)
-    public ResponseEntity<?> signOut(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> signOut(@Parameter(hidden = true) @RequestHeader("Authorization") String authHeader) {
         if (!authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().body("Invalid \"Authentication\" header");
         }
@@ -124,8 +124,7 @@ public class AccountController extends ApiController {
     public ResponseEntity<?> update(@RequestBody @Valid AuthRequest request) {
         try {
             Account user = service.updateCredentials(service.getCurrentAccount(), request.username(), request.password());
-            AccountDto newData = service.toDto(user);
-            return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(user.toDto(), HttpStatus.ACCEPTED);
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

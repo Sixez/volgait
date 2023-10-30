@@ -40,13 +40,13 @@ public class TransportController extends ApiController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> transportInfo(@PathVariable @Min(0) Long id) {
-        if (!service.exists(id)) {
+        Transport transport = service.getById(id);
+
+        if (transport == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Transport transport = service.getById(id);
-        TransportDto transportDto = service.toDto(transport);
-        return ResponseEntity.ok(transportDto);
+        return ResponseEntity.ok(transport.toDto());
     }
 
     @Operation(
@@ -64,8 +64,8 @@ public class TransportController extends ApiController {
         try {
             Account owner = accountService.getCurrentAccount();
             Transport transport = service.createTransport(transportDto, owner);
-            TransportDto createdDto = service.toDto(transport);
-            return new ResponseEntity<>(createdDto, HttpStatus.CREATED);
+
+            return new ResponseEntity<>(transport.toDto(), HttpStatus.CREATED);
         } catch (AccountException | TransportException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -95,9 +95,8 @@ public class TransportController extends ApiController {
         }
 
         try {
-            Transport transport = service.update(id, transportDto);
-            TransportDto newData = service.toDto(transport);
-            return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
+            Transport updated = service.update(id, transportDto);
+            return new ResponseEntity<>(updated.toDto(), HttpStatus.ACCEPTED);
         } catch (TransportException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

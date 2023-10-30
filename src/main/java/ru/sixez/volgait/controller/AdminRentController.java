@@ -56,13 +56,13 @@ public class AdminRentController extends AdminController {
     })
     @GetMapping(RENT_MAP + "/{rentId}")
     public ResponseEntity<?> rentInfo(@PathVariable @Min(0) Long rentId) {
-        if (!service.exists(rentId)) {
+        Rent rent = service.getById(rentId);
+
+        if (rent == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getById(rentId);
-        RentDto data = service.toDto(rent);
-        return ResponseEntity.ok(data);
+        return ResponseEntity.ok(rent.toDto());
     }
 
     @Operation(
@@ -78,13 +78,12 @@ public class AdminRentController extends AdminController {
     })
     @GetMapping(USER_HISTORY + "/{userId}")
     public ResponseEntity<?> userHistory(@PathVariable @Min(0) Long userId) {
-        if (accountService.exists(userId)) {
+        if (!service.exists(userId)) {
             return ResponseEntity.notFound().build();
         }
-        Account user = accountService.getById(userId);
 
-        List<RentDto> rents = service.getListByUserId(user.getId()).stream()
-                .map(service::toDto)
+        List<RentDto> rents = service.getListByUserId(userId).stream()
+                .map(Rent::toDto)
                 .toList();
 
         if (rents.isEmpty()) {
@@ -112,7 +111,7 @@ public class AdminRentController extends AdminController {
         }
 
         List<RentDto> rents = service.getListByTransportId(transportId).stream()
-                .map(service::toDto)
+                .map(Rent::toDto)
                 .toList();
 
         if (rents.isEmpty()) {
@@ -142,8 +141,7 @@ public class AdminRentController extends AdminController {
             Account user = accountService.getById(data.userId());
 
             Rent rent = service.rent(data.priceType(), user, transport);
-            RentDto created = service.toDto(rent);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
+            return new ResponseEntity<>(rent.toDto(), HttpStatus.CREATED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -166,20 +164,21 @@ public class AdminRentController extends AdminController {
             @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
             @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude)
     {
-        if (!service.exists(rentId)) {
+        Rent rent = service.getById(rentId);
+
+        if (rent == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getById(rentId);
 
         try {
-            rent = service.endRent(rent, latitude, longitude);
-            transportService.update(rent.getTransport());
+            Rent updated = service.endRent(rent, latitude, longitude);
+            transportService.update(updated.getTransport());
 
-            accountService.withdraw(rent.getUser().getId(), rent.getFinalPrice());
-            RentDto data = service.toDto(rent);
+            accountService.withdraw(updated.getUser().getId(), updated.getFinalPrice());
+            accountService.pay(updated.getUser().getId(), updated.getFinalPrice() * 0.9);
 
-            return new ResponseEntity<>(data, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(updated.toDto(), HttpStatus.ACCEPTED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -203,8 +202,7 @@ public class AdminRentController extends AdminController {
 
         try {
             Rent updated = service.update(id, data);
-            RentDto newData = service.toDto(updated);
-            return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(updated.toDto(), HttpStatus.ACCEPTED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

@@ -66,7 +66,7 @@ public class RentController extends ApiController {
         List<TransportDto> responseList = searchResult.stream()
                 .filter(Transport::isCanBeRented)
                 .filter(transport -> !service.isTransportRented(transport.getId()))
-                .map(transportService::toDto)
+                .map(Transport::toDto)
                 .toList();
 
         if (responseList.isEmpty()) {
@@ -88,11 +88,11 @@ public class RentController extends ApiController {
     })
     @GetMapping("/{rentId}")
     public ResponseEntity<?> rentInfo(@PathVariable @Min(0) Long rentId) {
-        if (!service.exists(rentId)) {
+        Rent rent = service.getById(rentId);
+
+        if (rent == null) {
             return ResponseEntity.notFound().build();
         }
-        Rent rent = service.getById(rentId);
-        RentDto rentDto = service.toDto(rent);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long userId = rent.getUser().getId();
@@ -102,7 +102,7 @@ public class RentController extends ApiController {
             return new ResponseEntity<>("You have no access to this rent", HttpStatus.FORBIDDEN);
         }
 
-        return ResponseEntity.ok(rentDto);
+        return ResponseEntity.ok(rent.toDto());
     }
 
     @Operation(
@@ -120,7 +120,7 @@ public class RentController extends ApiController {
         Account user = accountService.getCurrentAccount();
 
         List<RentDto> rents = service.getListByUserId(user.getId()).stream()
-                .map(service::toDto)
+                .map(Rent::toDto)
                 .toList();
 
         if (rents.isEmpty()) {
@@ -143,11 +143,11 @@ public class RentController extends ApiController {
     })
     @GetMapping(TRANSPORT_HISTORY + "/{transportId}")
     public ResponseEntity<?> transportHistory(@PathVariable @Min(0) Long transportId) {
-        if (!transportService.exists(transportId)) {
+        Transport transport = transportService.getById(transportId);
+
+        if (transport == null) {
             return ResponseEntity.notFound().build();
         }
-
-        Transport transport = transportService.getById(transportId);
 
         long requesterId = accountService.getCurrentAccount().getId();
         long transportOwnerId = transport.getOwner().getId();
@@ -157,7 +157,7 @@ public class RentController extends ApiController {
         }
 
         List<RentDto> rents = service.getListByTransportId(transportId).stream()
-                .map(service::toDto)
+                .map(Rent::toDto)
                 .toList();
 
         if (rents.isEmpty()) {
@@ -180,17 +180,16 @@ public class RentController extends ApiController {
     })
     @PostMapping(NEW_RENT + "/{transportId}")
     public ResponseEntity<?> newRent(@PathVariable @Min(0) Long transportId, @RequestParam RentTypeEnum rentType) {
-        if (!transportService.exists(transportId)) {
+        Transport transport = transportService.getById(transportId);
+        Account user = accountService.getCurrentAccount();
+
+        if (transport == null) {
             return ResponseEntity.notFound().build();
         }
 
         try {
-            Transport transport = transportService.getById(transportId);
-            Account user = accountService.getCurrentAccount();
-
             Rent rent = service.rent(rentType, user, transport);
-            RentDto data = service.toDto(rent);
-            return new ResponseEntity<>(data, HttpStatus.CREATED);
+            return new ResponseEntity<>(rent.toDto(), HttpStatus.CREATED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -213,26 +212,35 @@ public class RentController extends ApiController {
             @Parameter(description = "latitude") @RequestParam("lat") @Min(0) Double latitude,
             @Parameter(description = "longitude") @RequestParam("long") @Min(0) Double longitude)
     {
-        if (!service.exists(rentId)) {
+        Rent rent = service.getById(rentId);
+
+        if (rent == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Rent rent = service.getById(rentId);
+        if (rent.isEnded()) {
+            return ResponseEntity.ok("This rent is already closed");
+        }
 
         long requesterId = accountService.getCurrentAccount().getId();
         long userId = rent.getUser().getId();
+        long transportOwnerId = rent.getUser().getId();
         if (requesterId != userId) {
             return new ResponseEntity<>("You have no access to this rent", HttpStatus.FORBIDDEN);
         }
 
         try {
-            rent = service.endRent(rent, latitude, longitude);
-            transportService.update(rent.getTransport());
+            if (rent.getUser().getBalance() < service.calculatePrice(rent)) {
+                return new ResponseEntity<>("Not enough money to end this rent", HttpStatus.FORBIDDEN);
+            }
 
-            accountService.withdraw(rent.getUser().getId(), rent.getFinalPrice());
-            RentDto data = service.toDto(rent);
+            Rent updated = service.endRent(rent, latitude, longitude);
+            transportService.update(updated.getTransport());
 
-            return new ResponseEntity<>(data, HttpStatus.ACCEPTED);
+            accountService.withdraw(userId, updated.getFinalPrice());
+            accountService.pay(transportOwnerId, updated.getFinalPrice() * 0.9);
+
+            return new ResponseEntity<>(updated.toDto(), HttpStatus.ACCEPTED);
         } catch (RentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

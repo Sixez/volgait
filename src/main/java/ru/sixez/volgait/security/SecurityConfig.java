@@ -18,7 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import ru.sixez.volgait.controller.*;
-import ru.sixez.volgait.service.impl.AccountDetailsService;
+import ru.sixez.volgait.service.AccountDetailsService;
 
 import java.util.Arrays;
 
@@ -74,6 +74,9 @@ public class SecurityConfig{
             ).hasAuthority("USER");
 
             request.requestMatchers(HttpMethod.GET, RentController.ROUTE + "/{rentId}").hasAuthority("USER");
+
+            // hesoyam
+            request.requestMatchers(PaymentController.ROUTE + "/**").hasAuthority("USER");
 
             // admin endpoints open only for admins
             request.requestMatchers(AdminController.ROUTE + "/**").hasAuthority("ADMIN");

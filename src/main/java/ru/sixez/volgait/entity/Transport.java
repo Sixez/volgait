@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import ru.sixez.volgait.dto.TransportDto;
 
 @Data
 @NoArgsConstructor
@@ -14,8 +15,9 @@ import org.hibernate.annotations.OnDeleteAction;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = Transport.TABLE_NAME)
-public class Transport extends AbstractEntity {
-    public static final String TABLE_NAME =  AbstractEntity.DB_PREFIX + "transport";
+public class Transport extends AbstractEntity<TransportDto, Transport> {
+    public static final String TABLE_NAME =  DB_PREFIX + "transport";
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -40,4 +42,40 @@ public class Transport extends AbstractEntity {
     private double latitude;
     private double minutePrice;
     private double dayPrice;
+
+    @Override
+    public TransportDto toDto() {
+        return new TransportDto(
+                getId(),
+                owner.getId(),
+                description,
+                transportType,
+                model,
+                identifier,
+                color,
+                canBeRented,
+                longitude,
+                latitude,
+                minutePrice,
+                dayPrice
+        );
+    }
+
+    @Override
+    public Transport fromDto(TransportDto dto) {
+        setId(dto.id());
+        owner = new Account();
+        owner.setId(dto.owner_id());
+        description = dto.description();
+        transportType = dto.transportType();
+        model = dto.model();
+        identifier = dto.identifier();
+        color = dto.color();
+        canBeRented = dto.canBeRented();
+        longitude = dto.longitude();
+        latitude = dto.latitude();
+        minutePrice = dto.minutePrice();
+        dayPrice = dto.dayPrice();
+        return this;
+    }
 }

@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import ru.sixez.volgait.dto.RentDto;
 
 import java.util.Date;
 
@@ -16,8 +17,8 @@ import java.util.Date;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = Rent.TABLE_NAME)
-public class Rent extends AbstractEntity {
-    public static final String TABLE_NAME =  AbstractEntity.DB_PREFIX + "rents";
+public class Rent extends AbstractEntity<RentDto, Rent> {
+    public static final String TABLE_NAME =  DB_PREFIX + "rents";
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "transport_id", nullable = false)
@@ -42,5 +43,36 @@ public class Rent extends AbstractEntity {
 
     public boolean isEnded() {
         return timeEnd != null;
+    }
+
+    @Override
+    public RentDto toDto() {
+        return new RentDto(
+                getId(),
+                transport.getId(),
+                user.getId(),
+                timeStart,
+                timeEnd,
+                priceOfUnit,
+                priceType,
+                finalPrice
+        );
+    }
+
+    @Override
+    public Rent fromDto(RentDto dto) {
+        setId(dto.id());
+
+        transport = new Transport();
+        transport.setId(dto.transportId());
+        user = new Account();
+        user.setId(dto.userId());
+        timeStart = dto.timeStart();
+        timeEnd = dto.timeEnd();
+        priceOfUnit = dto.priceOfUnit();
+        priceType = dto.priceType();
+        finalPrice = dto.finalPrice();
+
+        return this;
     }
 }

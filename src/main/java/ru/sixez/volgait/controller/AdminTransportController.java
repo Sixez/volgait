@@ -54,7 +54,7 @@ public class AdminTransportController extends AdminController {
         if (count == null || count <= 0) count = 10;
 
         List<TransportDto> list = service.getList(start, count, type).stream()
-                .map(service::toDto)
+                .map(Transport::toDto)
                 .toList();
 
         if (list.isEmpty()) {
@@ -76,13 +76,13 @@ public class AdminTransportController extends AdminController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<?> transportInfo(@PathVariable @Min(0) Long id) {
-        if (!service.exists(id)) {
+        Transport transport = service.getById(id);
+
+        if (transport == null) {
             return ResponseEntity.notFound().build();
         }
 
-        Transport transport = service.getById(id);
-        TransportDto transportDto = service.toDto(transport);
-        return ResponseEntity.ok(transportDto);
+        return ResponseEntity.ok(transport.toDto());
     }
 
     @Operation(
@@ -98,16 +98,15 @@ public class AdminTransportController extends AdminController {
     })
     @PostMapping
     public ResponseEntity<?> createTransport(@RequestBody @Valid TransportDto data) {
-        if (!accountService.exists(data.owner_id())) {
+        Account owner = accountService.getById(data.owner_id());
+
+        if (owner == null) {
             return ResponseEntity.badRequest().body("Account with id %d doesn't exist".formatted(data.owner_id()));
         }
 
         try {
-            Account owner = accountService.getById(data.owner_id());
-
             Transport transport = service.createTransport(data, owner);
-            TransportDto createdDto = service.toDto(transport);
-            return new ResponseEntity<>(createdDto, HttpStatus.CREATED);
+            return new ResponseEntity<>(transport.toDto(), HttpStatus.CREATED);
         } catch (AccountException | TransportException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -132,8 +131,7 @@ public class AdminTransportController extends AdminController {
 
         try {
             Transport transport = service.update(id, transportDto);
-            TransportDto newData = service.toDto(transport);
-            return new ResponseEntity<>(newData, HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(transport.toDto(), HttpStatus.ACCEPTED);
         } catch (TransportException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
