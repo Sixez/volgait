@@ -61,6 +61,9 @@ public class TransportController extends ApiController {
     })
     @PostMapping
     public ResponseEntity<?> createTransport(@RequestBody @Valid TransportDto transportDto) {
+        if (service.exists(transportDto.identifier())) {
+            return ResponseEntity.badRequest().body("Transport with given identifier is already in db");
+        }
         try {
             Account owner = accountService.getCurrentAccount();
             Transport transport = service.createTransport(transportDto, owner);

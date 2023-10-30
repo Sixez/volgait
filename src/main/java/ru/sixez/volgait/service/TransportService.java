@@ -21,6 +21,10 @@ public class TransportService extends AbstractCrudService<TransportDto, Transpor
         return repo;
     }
 
+    public boolean exists(String identifier) {
+        return repo.existsByIdentifier(identifier);
+    }
+
     public Transport createTransport(TransportDto data, Account owner) {
         if (data.transportType() == TransportTypeEnum.All) {
             throw new TransportException("Transport type cannot be \"All\"!");

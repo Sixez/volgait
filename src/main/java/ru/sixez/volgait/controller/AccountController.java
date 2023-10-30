@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 import ru.sixez.volgait.Swagger2Config;
 import ru.sixez.volgait.dto.AccountDto;
@@ -70,21 +71,21 @@ public class AccountController extends ApiController {
         try {
             AuthResponse response = authService.signIn(request);
             return ResponseEntity.ok(response);
-        } catch (AccountException e) {
+        } catch (AuthenticationException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @Operation(summary = "Register new user account", description = "Registration point for new users")
     @ApiResponses({
-            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = AuthRequest.class), mediaType = "application/json")),
+            @ApiResponse(responseCode = "201", content = @Content(schema = @Schema(implementation = AccountDto.class), mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Account registration failed", content = @Content)
     })
     @PostMapping(SIGN_UP)
     public ResponseEntity<?> signUp(@RequestBody @Valid AuthRequest request) {
         try {
-            authService.register(request);
-            return new ResponseEntity<>(request, HttpStatus.CREATED);
+            Account created = authService.register(request);
+            return new ResponseEntity<>(created.toDto(), HttpStatus.CREATED);
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

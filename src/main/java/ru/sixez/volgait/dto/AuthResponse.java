@@ -1,10 +1,14 @@
 package ru.sixez.volgait.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
+@Schema(name = "Authentication response", description = "Response body of authentication endpoint")
 public record AuthResponse(
-        @NotBlank(message = "Username can not be blank!")
+        @Schema(accessMode = Schema.AccessMode.READ_ONLY, defaultValue = "user")
+        @NotBlank
         String username,
-        @NotBlank(message = "token can not be blank!")
+        @Schema(accessMode = Schema.AccessMode.READ_ONLY, defaultValue = "JWToken")
+        @NotBlank
         String token
 ) {}

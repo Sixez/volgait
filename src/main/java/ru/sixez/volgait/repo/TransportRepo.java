@@ -17,6 +17,8 @@ public interface TransportRepo extends JpaRepository<Transport, Long> {
     @Transactional
     List<Transport> findAllByOwnerId(long ownerId);
 
+    boolean existsByIdentifier(String identifier);
+
     @Query(nativeQuery = true, value = "SELECT * FROM " + Transport.TABLE_NAME + " t WHERE t.id >= :start ORDER BY t.id ASC LIMIT :count")
     List<Transport> findByIdGreaterThan(@Param("start") long start, @Param("count") int count);
 

@@ -1,9 +1,10 @@
 package ru.sixez.volgait.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,37 +27,34 @@ public class AuthenticationService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public AuthResponse signIn(AuthRequest request) {
+    public AuthResponse signIn(AuthRequest request) throws AuthenticationException {
         Account acc = accountRepo.findByUsername(request.username()).orElse(null);
         if (acc == null) {
-            throw new AccountException("User with username %s does not exists!".formatted(request.username()));
+            throw new AuthenticationCredentialsNotFoundException("User with username %s does not exists!".formatted(request.username()));
         }
 
         UserDetails user = new AccountDetails(acc);
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 request.username(),
                 request.password()
         ));
 
-        if (auth.isAuthenticated()) {
-            return new AuthResponse(request.username(), jwtService.generateToken(user));
-        } else {
-            throw new AccountException("Given invalid credentials for username %s".formatted(request.username()));
-        }
+        return new AuthResponse(request.username(), jwtService.generateToken(user));
     }
 
-    public void register(AuthRequest request) {
+    public Account register(AuthRequest request) {
         AccountDto newAccount = new AccountDto(0, request.username(), request.password(), false, 0);
-        register(newAccount);
+        return register(newAccount);
     }
 
-    public void register(AccountDto account) {
+    public Account register(AccountDto account) {
         if (accountRepo.existsByUsername(account.username())) {
-            throw new AccountException("User with username %s already exists!".formatted(account.username()));
+            throw new AccountException("User with username %s already exist".formatted(account.username()));
         }
         Account acc = new Account().fromDto(account);
+        acc.setId(null);
         acc.setPassword(passwordEncoder.encode(account.password()));
-        accountRepo.saveAndFlush(acc);
+        return accountRepo.saveAndFlush(acc);
     }
 
     public void signOut(String token) {

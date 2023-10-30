@@ -74,8 +74,9 @@ public class AdminAccountController extends AdminController {
     @PostMapping
     public ResponseEntity<?> createAccount(@RequestBody @Valid AccountDto accountDto) {
         try {
-            authService.register(accountDto);
-            return new ResponseEntity<>(accountDto, HttpStatus.CREATED);
+            Account created = authService.register(accountDto);
+
+            return new ResponseEntity<>(created.toDto(), HttpStatus.CREATED);
         } catch (AccountException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
